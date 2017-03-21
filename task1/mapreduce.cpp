@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
             std::cerr << "Reduce:\tpath_to_program reduce path_to_reduce_script (script parameters) input_file output_file" << std::endl;
             std::cerr << "Help:\tpath_to_program help" << std::endl;
             std::cerr << std::endl;
-            std::cerr << "Each line of input file for reduce operation must contain tab-separated values: \"key \\t value\"" << std::endl;
+            std::cerr << "Each line of input file must contain tab-separated values: \"key \\t value\"" << std::endl;
             std::cerr << "Each line of output file will contain tab-separated values: \"key \\t value\"" << std::endl;
             std::cerr << std::endl;
             return 0;
