@@ -17,9 +17,20 @@ const int MAX_BYTES = 50'000'000;
 
 void readLines(std::ifstream& in, int bytesize, std::vector<std::pair<std::string, std::string> >& res){
     std::string key, value;
+    char* str = new char[bytesize];
+    in.read(str, bytesize);
+    std::string data(str);
+    char c;
+    if(!in.eof() && data[data.length() - 1] != '\n'){
+        do {
+            in >> c;
+            data += c;
+        } while(c != '\n');
+    }
+    std::stringstream sstr(data);
     std::string s;
-    while(bytesize > 0 && !in.eof()) {
-        getline(in, s);
+    while(!sstr.eof()) {
+        std::getline(sstr, s);
         int delim = s.find('\t');
         key = s.substr(0, delim);
         value = s.substr(delim + 1, s.length() - delim - 1);
@@ -27,8 +38,8 @@ void readLines(std::ifstream& in, int bytesize, std::vector<std::pair<std::strin
             continue;
         }
         res.push_back({key, value});
-        bytesize -= s.length() + 1;
     }
+    delete [] str;
 }
 
 void writeLines(std::ofstream& out, std::vector<std::pair<std::string, std::string> >& lines){
@@ -235,7 +246,6 @@ int main(int argc, char** argv) {
 
         std::string str, key, value;
         std::map<std::string, std::vector<std::string>> values;
-        std::stringstream sstr;
         std::string old_file(src_file);
         std::string new_file = generateFileName(std::string(src_file));
         sortFile(old_file, new_file);
@@ -245,10 +255,10 @@ int main(int argc, char** argv) {
 
         bool firstKey = true;
         std::string lastKey;
-        do {
-            sstr.clear();
-            sstr.str(str);
-            sstr >> key >> value;
+        while (std::getline(std::cin, str)) {
+            int div = str.find('\t');
+            key = str.substr(0, div);
+            value = str.substr(div + 1, str.length() -  div - 1);
             if(!firstKey && key != lastKey){ // if key == lastKey ended in sorted file
                 pipe(parent_child);
                 pipe(child_parent);
@@ -288,40 +298,42 @@ int main(int argc, char** argv) {
             if(firstKey){
                 firstKey = false;
             }
-        } while (std::getline(std::cin, str));
+        }
 
-        pipe(parent_child);
-        pipe(child_parent);
-        int pid = fork();
-        if (pid == 0) {
+        if(lastKey.length() > 0){
+            pipe(parent_child);
+            pipe(child_parent);
+            int pid = fork();
+            if (pid == 0) {
+                close(parent_child[1]);
+                close(child_parent[0]);
+                dup2(parent_child[0], 0);
+                dup2(child_parent[1], 1);
+                if (execvp(script_path, params)) {
+                    perror("execvp");
+                }
+                exit(1);
+            }
+            for(auto val: values[lastKey]){
+                write(parent_child[1], lastKey.data(), lastKey.size());
+                write(parent_child[1], "\t", 1);
+                write(parent_child[1], val.data(), val.size());
+                write(parent_child[1], "\n", 1);
+            }
             close(parent_child[1]);
-            close(child_parent[0]);
-            dup2(parent_child[0], 0);
-            dup2(child_parent[1], 1);
-            if (execvp(script_path, params)) {
-                perror("execvp");
-            }
-            exit(1);
-        }
-        for(auto val: values[lastKey]){
-            write(parent_child[1], lastKey.data(), lastKey.size());
-            write(parent_child[1], "\t", 1);
-            write(parent_child[1], val.data(), val.size());
-            write(parent_child[1], "\n", 1);
-        }
-        close(parent_child[1]);
-        wait(NULL);
-        char buf[1000];
-        memset(buf, 0, 1000);
-        while(true){
-            read(child_parent[0], buf, sizeof(buf));
-            std::cout << buf;
-            if(strlen(buf) < 1000){
-                break;
-            }
+            wait(NULL);
+            char buf[1000];
             memset(buf, 0, 1000);
+            while(true){
+                read(child_parent[0], buf, sizeof(buf));
+                std::cout << buf;
+                if(strlen(buf) < 1000){
+                    break;
+                }
+                memset(buf, 0, 1000);
+            }
+            close(child_parent[0]);
         }
-        close(child_parent[0]);
 
     } else {
         fclose(stdin);
