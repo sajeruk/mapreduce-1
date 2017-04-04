@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
 	for(; std::getline(std::cin, str);){
 		int div = str.find('\t');
 		key = str.substr(0, div);
-		value = str.substr(div + 1, str.length() -  div - 1);
+		value = str.substr(div + 1, str.length() - div - 1);
 		sstr.clear();
 		sstr.str(value);
 		sstr >> val;
