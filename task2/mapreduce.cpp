@@ -13,11 +13,11 @@
 #include <sys/wait.h>
 #include <ctime>
 
-const int MAX_BYTES = 50'000'000;
+const int MAX_BYTES = 50'000'000; // безотносительно работы, такое число лучше задавать конфигом или опцией бинаря - чтобы можно было пробовать разные значения не перекомпилируя программу
 
 void readLines(std::ifstream& in, int bytesize, std::vector<std::pair<std::string, std::string> >& res){
     std::string key, value;
-    char* str = new char[bytesize];
+    char* str = new char[bytesize]; // и если где-то дальше упадём, то delete не сделаем. есть же вектор
     in.read(str, bytesize);
     std::string data(str);
     char c;
@@ -42,7 +42,7 @@ void readLines(std::ifstream& in, int bytesize, std::vector<std::pair<std::strin
     delete [] str;
 }
 
-void writeLines(std::ofstream& out, std::vector<std::pair<std::string, std::string> >& lines){
+void writeLines(std::ofstream& out, std::vector<std::pair<std::string, std::string> >& lines){ // перед { пробел нужен, а в >> - нет, если вы используете с++11
     std::string key, value;
     std::string s;
     for(auto p: lines){
@@ -63,7 +63,8 @@ std::string getRandomString(int length){
 }
 
 
-std::string generateFileName(std::string previousName) {
+std::string generateFileName(std::string previousName) { // зачем здесь передавать строку по значению? это ведь не метод класса, объект которого мы хотим сделать её ownerом
+    // по сути, с учётом того как оно передаётся - тут происходит ненужное копирование
     std::string s;
     std::ifstream in;
     s = getRandomString(5) + "_" + previousName;
@@ -112,7 +113,9 @@ void sortFile(std::string path, std::string new_path) {
     std::ifstream in(path);
     std::vector<std::pair<std::string, std::string> > one_big_part;
     std::vector<std::string> fileNames;
-    std::vector<std::pair<int, std::vector<std::pair<std::string, std::string> > > > small_parts;
+    std::vector<std::pair<int, std::vector<std::pair<std::string, std::string> > > > small_parts; // тут явно не хватает дополнительных сущностей
+    // использовать std::pair для обозначения всего очень сбивает с толку в процессе чтения
+    // тут было бы очень логично использовать итератор (который сам хранит всю внутреннюю информацию, в т.ч и про индекс на котором он сейчас находится)
     std::vector<std::ifstream> streams;
     std::vector<std::pair<std::string, std::string> > output;
     std::vector<int> temp;
